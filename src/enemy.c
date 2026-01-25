@@ -87,22 +87,26 @@ void updateEnemies(float dt) {
                 break;
         }
         
-        // Kollision mit Spieler
+        // Kollision mit Spieler (mit Unverwundbarkeit)
         PlayerPair* player = getPlayer();
-        float dx = player->position.x - enemies[i].position.x;
-        float dy = player->position.y - enemies[i].position.y;
-        float distance = sqrtf(dx * dx + dy * dy);
         
-        if(distance < 35.0f && player->hearts > 0) {  // Kollisionsradius
-            player->hearts--;
+        if(player->invincibilityTimer <= 0.0f) {
+            float dx = player->position.x - enemies[i].position.x;
+            float dy = player->position.y - enemies[i].position.y;
+            float distance = sqrtf(dx * dx + dy * dy);
             
-            // Kurzer Rückstoß
-            if(dx > 0) {
-                player->velocity.x = 5.0f;
-            } else {
-                player->velocity.x = -5.0f;
+            if(distance < 35.0f && player->hearts > 0) {  // Kollisionsradius
+                player->hearts--;
+                player->invincibilityTimer = 2.0f;  // 2 Sekunden Unverwundbarkeit
+                
+                // Kurzer Rückstoß
+                if(dx > 0) {
+                    player->velocity.x = 5.0f;
+                } else {
+                    player->velocity.x = -5.0f;
+                }
+                player->velocity.y = -5.0f;
             }
-            player->velocity.y = -5.0f;
         }
     }
 }

@@ -12,10 +12,21 @@
 #define MAX_FALL_SPEED      10.0f
 #define HAND_DISTANCE       30.0f  // Abstand zwischen Tanja und Hans
 
+// Animations-Zustände
+typedef enum {
+    ANIM_IDLE,
+    ANIM_WALK,
+    ANIM_JUMP
+} AnimState;
+
 // Charakter (Tanja oder Hans)
 typedef struct {
     Vector2 offset;      // Relativer Versatz zum Mittelpunkt
     u32 color;           // Farbe (für Prototyp)
+    AnimState animState;
+    float animTimer;
+    int animFrame;
+    bool facingRight;
 } Character;
 
 // Spieler-Paar
@@ -28,6 +39,8 @@ typedef struct {
     
     Character tanja;
     Character hans;
+    
+    float invincibilityTimer;  // Für Unverwundbarkeit nach Treffer
 } PlayerPair;
 
 // Funktionen

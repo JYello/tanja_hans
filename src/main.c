@@ -13,6 +13,7 @@
 #include "level.h"
 #include "input.h"
 #include "render.h"
+#include "enemy.h"
 
 // Globale Variablen
 static bool running = true;
@@ -30,6 +31,9 @@ int main(int argc, char **argv) {
     // Spieler initialisieren
     initPlayer();
     
+    // Gegner initialisieren
+    initEnemies();
+    
     // Hauptschleife
     while(running) {
         // WPAD_ScanPads wird jetzt hier gemacht, nicht in updateInput()!
@@ -42,19 +46,57 @@ int main(int argc, char **argv) {
             running = false;
         }
         
+        PlayerPair* player = getPlayer();
+        
+        // Game Over Check
+        if(player->hearts <= 0) {
+            gameState = STATE_GAMEOVER;
+        }
+        
         // Input verarbeiten
         updateInput();
         
-        // Spiellogik aktualisieren (60 FPS = ~16.67ms pro Frame)
-        updatePlayer(1.0f / 60.0f);
-        updatePhysics();
+        if(gameState == STATE_PLAYING) {
+            // Spiellogik aktualisieren (60 FPS = ~16.67ms pro Frame)
+            updatePlayer(1.0f / 60.0f);
+            updateEnemies(1.0f / 60.0f);
+            updatePhysics();
+        } else if(gameState == STATE_GAMEOVER) {
+            // Bei Game Over: A zum Neustart
+            if(pressed & WPAD_BUTTON_A) {
+                // Neustart
+                initPlayer();
+                initEnemies();
+                gameState = STATE_PLAYING;
+            }
+        }
         
         // Rendern
         GRRLIB_FillScreen(0x87CEEBFF); // Himmelblau
         
-        renderLevel();
-        renderPlayer();
-        renderHUD();
+        if(gameState == STATE_PLAYING) {
+            renderLevel();
+            renderPlayer();
+            renderHUD();
+        } else if(gameState == STATE_GAMEOVER) {
+            // Game Over Screen
+            GRRLIB_Rectangle(
+                SCREEN_WIDTH / 2 - 150,
+                SCREEN_HEIGHT / 2 - 60,
+                300,
+                120,
+                0x000000CC,  // Halbtransparent schwarz
+                true
+            );
+            GRRLIB_Rectangle(
+                SCREEN_WIDTH / 2 - 150,
+                SCREEN_HEIGHT / 2 - 60,
+                300,
+                120,
+                COL_WHITE,
+                false
+            );
+        }
         
         GRRLIB_Render();
     }

@@ -2,6 +2,7 @@
 #include "game.h"
 #include "level.h"
 #include "player.h"
+#include "enemy.h"
 #include <grrlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -68,6 +69,39 @@ void renderLevel(void) {
             }
         }
     }
+    
+    // Gegner zeichnen
+    Enemy* enemies = getEnemies();
+    int enemyCount = getEnemyCount();
+    
+    for(int i = 0; i < enemyCount; i++) {
+        if(enemies[i].active) {
+            // Gegner als Kreis mit Augen
+            GRRLIB_Circle(
+                enemies[i].position.x,
+                enemies[i].position.y,
+                10,
+                enemies[i].color,
+                true
+            );
+            
+            // Augen (kleine schwarze Punkte)
+            GRRLIB_Circle(
+                enemies[i].position.x - 4,
+                enemies[i].position.y - 2,
+                2,
+                COL_BLACK,
+                true
+            );
+            GRRLIB_Circle(
+                enemies[i].position.x + 4,
+                enemies[i].position.y - 2,
+                2,
+                COL_BLACK,
+                true
+            );
+        }
+    }
 }
 
 void renderPlayer(void) {
@@ -82,66 +116,117 @@ void renderPlayer(void) {
     float hansY = player->position.y + player->hans.offset.y;
     
     // Händchen-Verbindung (Linie)
-    GRRLIB_Line(
-        tanjaX,
-        tanjaY,
-        hansX,
-        hansY,
-        0xFFFFFFFF  // Weiß
-    );
+    // Blinkt bei Unverwundbarkeit
+    if(player->invincibilityTimer <= 0.0f || ((int)(player->invincibilityTimer * 10) % 2 == 0)) {
+        GRRLIB_Line(
+            tanjaX,
+            tanjaY,
+            hansX,
+            hansY,
+            0xFFFFFFFF  // Weiß
+        );
+        
+        // Herz in der Mitte der Verbindung
+        float midX = (tanjaX + hansX) / 2.0f;
+        float midY = (tanjaY + hansY) / 2.0f;
+        
+        GRRLIB_Rectangle(
+            midX - 4,
+            midY - 4,
+            8,
+            8,
+            0xFF1493FF,  // Deep Pink
+            true
+        );
+    }
     
-    // Herz in der Mitte der Verbindung
-    float midX = (tanjaX + hansX) / 2.0f;
-    float midY = (tanjaY + hansY) / 2.0f;
+    // Tanja zeichnen mit Animation
+    float tanjaWidth = PLAYER_WIDTH;
+    float tanjaHeight = PLAYER_HEIGHT;
     
-    GRRLIB_Rectangle(
-        midX - 4,
-        midY - 4,
-        8,
-        8,
-        0xFF1493FF,  // Deep Pink
-        true
-    );
+    // Walk-Animation: Größe pulsiert leicht
+    if(player->tanja.animState == ANIM_WALK) {
+        float pulse = (player->tanja.animFrame % 2 == 0) ? 1.0f : 0.9f;
+        tanjaHeight *= pulse;
+    }
+    // Jump-Animation: gestreckt
+    else if(player->tanja.animState == ANIM_JUMP) {
+        tanjaHeight *= 1.1f;
+        tanjaWidth *= 0.9f;
+    }
     
-    // Tanja zeichnen (Rechteck)
-    GRRLIB_Rectangle(
-        tanjaX - PLAYER_WIDTH / 2,
-        tanjaY - PLAYER_HEIGHT / 2,
-        PLAYER_WIDTH,
-        PLAYER_HEIGHT,
-        player->tanja.color,
-        true
-    );
+    // Blinken bei Unverwundbarkeit
+    if(player->invincibilityTimer > 0.0f && ((int)(player->invincibilityTimer * 10) % 2 == 1)) {
+        // Nicht zeichnen (Blink-Effekt)
+    } else {
+        GRRLIB_Rectangle(
+            tanjaX - tanjaWidth / 2,
+            tanjaY - tanjaHeight / 2,
+            tanjaWidth,
+            tanjaHeight,
+            player->tanja.color,
+            true
+        );
+        
+        // Umrandung
+        GRRLIB_Rectangle(
+            tanjaX - tanjaWidth / 2,
+            tanjaY - tanjaHeight / 2,
+            tanjaWidth,
+            tanjaHeight,
+            COL_WHITE,
+            false
+        );
+        
+        // Gesicht (Augen)
+        float eyeOffset = player->tanja.facingRight ? 4.0f : -4.0f;
+        GRRLIB_Circle(tanjaX + eyeOffset - 3, tanjaY - 5, 2, COL_BLACK, true);
+        GRRLIB_Circle(tanjaX + eyeOffset + 3, tanjaY - 5, 2, COL_BLACK, true);
+    }
     
-    // Umrandung
-    GRRLIB_Rectangle(
-        tanjaX - PLAYER_WIDTH / 2,
-        tanjaY - PLAYER_HEIGHT / 2,
-        PLAYER_WIDTH,
-        PLAYER_HEIGHT,
-        COL_WHITE,
-        false
-    );
+    // Hans zeichnen mit Animation
+    float hansWidth = PLAYER_WIDTH;
+    float hansHeight = PLAYER_HEIGHT;
     
-    // Hans zeichnen (Rechteck)
-    GRRLIB_Rectangle(
-        hansX - PLAYER_WIDTH / 2,
-        hansY - PLAYER_HEIGHT / 2,
-        PLAYER_WIDTH,
-        PLAYER_HEIGHT,
-        player->hans.color,
-        true
-    );
+    // Walk-Animation
+    if(player->hans.animState == ANIM_WALK) {
+        float pulse = (player->hans.animFrame % 2 == 0) ? 1.0f : 0.9f;
+        hansHeight *= pulse;
+    }
+    // Jump-Animation
+    else if(player->hans.animState == ANIM_JUMP) {
+        hansHeight *= 1.1f;
+        hansWidth *= 0.9f;
+    }
     
-    // Umrandung
-    GRRLIB_Rectangle(
-        hansX - PLAYER_WIDTH / 2,
-        hansY - PLAYER_HEIGHT / 2,
-        PLAYER_WIDTH,
-        PLAYER_HEIGHT,
-        COL_WHITE,
-        false
-    );
+    // Blinken bei Unverwundbarkeit
+    if(player->invincibilityTimer > 0.0f && ((int)(player->invincibilityTimer * 10) % 2 == 1)) {
+        // Nicht zeichnen
+    } else {
+        GRRLIB_Rectangle(
+            hansX - hansWidth / 2,
+            hansY - hansHeight / 2,
+            hansWidth,
+            hansHeight,
+            player->hans.color,
+            true
+        );
+        
+        // Umrandung
+        GRRLIB_Rectangle(
+            hansX - hansWidth / 2,
+            hansY - hansHeight / 2,
+            hansWidth,
+            hansHeight,
+            COL_WHITE,
+            false
+        );
+        
+        // Gesicht (Augen)
+        float eyeOffset = player->hans.facingRight ? 4.0f : -4.0f;
+        GRRLIB_Circle(hansX + eyeOffset - 3, hansY - 5, 2, COL_BLACK, true);
+        GRRLIB_Circle(hansX + eyeOffset + 3, hansY - 5, 2, COL_BLACK, true);
+    }
 }
 
 void renderHUD(void) {
@@ -167,42 +252,14 @@ void renderHUD(void) {
         );
     }
     
-    // DEBUG: Grounded-Status visuell (großes Rechteck oben rechts)
-    u32 groundedColor = player->grounded ? 0x00FF00FF : 0xFF0000FF; // Grün = grounded, Rot = in der Luft
-    GRRLIB_Rectangle(
-        SCREEN_WIDTH - 50,
-        10,
-        40,
-        40,
-        groundedColor,
-        true
-    );
-    GRRLIB_Rectangle(
-        SCREEN_WIDTH - 50,
-        10,
-        40,
-        40,
-        COL_WHITE,
-        false
-    );
-    
-    // DEBUG: Jump-Input visuell (kleines Rechteck daneben)
-    InputState* input = getInputState();
-    u32 jumpColor = input->jump ? 0xFFFF00FF : 0x666666FF; // Gelb = Jump gedrückt
-    GRRLIB_Rectangle(
-        SCREEN_WIDTH - 100,
-        10,
-        40,
-        40,
-        jumpColor,
-        true
-    );
-    GRRLIB_Rectangle(
-        SCREEN_WIDTH - 100,
-        10,
-        40,
-        40,
-        COL_WHITE,
-        false
-    );
+    // Sonnen-Zähler (oben rechts) - visuell
+    for(int i = 0; i < player->suns; i++) {
+        GRRLIB_Circle(
+            SCREEN_WIDTH - 30 - (i * 20),
+            25,
+            8,
+            COL_YELLOW,
+            true
+        );
+    }
 }

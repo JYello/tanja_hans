@@ -1,6 +1,7 @@
 #include "player.h"
 #include "input.h"
 #include "level.h"
+#include "audio.h"
 #include <math.h>
 
 static PlayerPair player;
@@ -93,6 +94,7 @@ void updatePlayer(float dt) {
     if(input->jump && player.grounded) {
         player.velocity.y = JUMP_FORCE;
         player.grounded = false;
+        playSound(SFX_JUMP);
     }
     
     // Gravitation (immer anwenden)
@@ -189,8 +191,10 @@ void updatePlayer(float dt) {
                 
                 if(collectibles[i].isHeart) {
                     player.hearts++;
+                    playSound(SFX_COLLECT_HEART);
                 } else {
                     player.suns++;
+                    playSound(SFX_COLLECT_SUN);
                 }
             }
         }

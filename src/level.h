@@ -29,14 +29,19 @@ typedef struct {
     
     Collectible* collectibles;
     int collectibleCount;
+    
+    int totalSuns;  // Sonnen die gesammelt werden müssen
 } Level;
 
 // Funktionen
 void initLevel(void);
+void loadLevel(int levelNumber);
 void cleanupLevel(void);
 Tile* getLevelTiles(void);
 int getLevelTileCount(void);
 Collectible* getCollectibles(void);
 int getCollectibleCount(void);
+int getCurrentLevel(void);
+int getTotalSuns(void);
 
 #endif // LEVEL_H

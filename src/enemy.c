@@ -1,5 +1,6 @@
 #include "enemy.h"
 #include "player.h"
+#include "audio.h"
 #include <math.h>
 
 #define ENEMY_SIZE 20.0f
@@ -95,17 +96,18 @@ void updateEnemies(float dt) {
             float dy = player->position.y - enemies[i].position.y;
             float distance = sqrtf(dx * dx + dy * dy);
             
-            if(distance < 35.0f && player->hearts > 0) {  // Kollisionsradius
-                player->hearts--;
-                player->invincibilityTimer = 2.0f;  // 2 Sekunden Unverwundbarkeit
+            if(distance < 35.0f) {  // Kollisionsradius
+                // Kein Herzverlust mehr! Nur sanfter Rückstoß
+                player->invincibilityTimer = 1.0f;  // 1 Sekunde Unverwundbarkeit
+                playSound(SFX_HIT);
                 
-                // Kurzer Rückstoß
+                // Sanfter Rückstoß (kleiner als vorher)
                 if(dx > 0) {
-                    player->velocity.x = 5.0f;
+                    player->velocity.x = 3.0f;
                 } else {
-                    player->velocity.x = -5.0f;
+                    player->velocity.x = -3.0f;
                 }
-                player->velocity.y = -5.0f;
+                player->velocity.y = -3.0f;
             }
         }
     }

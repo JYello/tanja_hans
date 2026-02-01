@@ -11,6 +11,12 @@ typedef enum {
     STATE_GAMEOVER
 } GameState;
 
+// Spielmodus
+typedef enum {
+    MODE_SINGLE_PLAYER,
+    MODE_TWO_PLAYER
+} GameMode;
+
 // Vektor für Positionen und Geschwindigkeiten
 typedef struct {
     float x;

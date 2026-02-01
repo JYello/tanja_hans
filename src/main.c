@@ -19,7 +19,8 @@
 
 // Globale Variablen
 static bool running = true;
-static GameState gameState = STATE_PLAYING;
+static GameState gameState = STATE_MENU;  // Starten mit Menü!
+static GameMode gameMode = MODE_SINGLE_PLAYER;
 static float levelCompleteTimer = 0.0f;
 
 int main(int argc, char **argv) {
@@ -34,12 +35,6 @@ int main(int argc, char **argv) {
     // Level laden
     initLevel();
     
-    // Spieler initialisieren
-    initPlayer();
-    
-    // Gegner initialisieren
-    initEnemies();
-    
     // Hauptschleife
     while(running) {
         // WPAD_ScanPads wird jetzt hier gemacht, nicht in updateInput()!
@@ -50,6 +45,22 @@ int main(int argc, char **argv) {
         // Beenden mit HOME
         if(pressed & WPAD_BUTTON_HOME) {
             running = false;
+        }
+        
+        // === MENÜ ===
+        if(gameState == STATE_MENU) {
+            // 1 = Single Player, 2 = Zwei-Spieler
+            if(pressed & WPAD_BUTTON_1) {
+                gameMode = MODE_SINGLE_PLAYER;
+                initPlayer(gameMode);
+                initEnemies();
+                gameState = STATE_PLAYING;
+            } else if(pressed & WPAD_BUTTON_2) {
+                gameMode = MODE_TWO_PLAYER;
+                initPlayer(gameMode);
+                initEnemies();
+                gameState = STATE_PLAYING;
+            }
         }
         
         PlayerPair* player = getPlayer();
@@ -68,7 +79,7 @@ int main(int argc, char **argv) {
                 
                 if(nextLevel <= 2) {  // Wir haben 2 Levels
                     loadLevel(nextLevel);
-                    initPlayer();
+                    initPlayer(gameMode);
                     initEnemies();
                     levelCompleteTimer = 0.0f;
                     playSound(SFX_LEVEL_COMPLETE);
@@ -94,11 +105,9 @@ int main(int argc, char **argv) {
         } else if(gameState == STATE_GAMEOVER) {
             // Bei Game Over: A zum Neustart
             if(pressed & WPAD_BUTTON_A) {
-                // Neustart von Level 1
+                // Zurück zum Menü
+                gameState = STATE_MENU;
                 loadLevel(1);
-                initPlayer();
-                initEnemies();
-                gameState = STATE_PLAYING;
                 levelCompleteTimer = 0.0f;
             }
         }
@@ -106,7 +115,35 @@ int main(int argc, char **argv) {
         // Rendern
         GRRLIB_FillScreen(0x87CEEBFF); // Himmelblau
         
-        if(gameState == STATE_PLAYING) {
+        if(gameState == STATE_MENU) {
+            // === MENÜ SCREEN ===
+            GRRLIB_Rectangle(
+                SCREEN_WIDTH / 2 - 200,
+                SCREEN_HEIGHT / 2 - 120,
+                400,
+                240,
+                0xFFB6C1CC,  // Rosa halbtransparent
+                true
+            );
+            GRRLIB_Rectangle(
+                SCREEN_WIDTH / 2 - 200,
+                SCREEN_HEIGHT / 2 - 120,
+                400,
+                240,
+                COL_WHITE,
+                false
+            );
+            
+            drawTextCentered("TANJA UND HANS", SCREEN_HEIGHT / 2 - 90, COL_WHITE, 2.5f);
+            drawTextCentered("HAND IN HAND", SCREEN_HEIGHT / 2 - 55, COL_WHITE, 2.0f);
+            
+            drawTextCentered("DRUECKE 1", SCREEN_HEIGHT / 2 - 10, COL_YELLOW, 1.8f);
+            drawTextCentered("SINGLE-PLAYER", SCREEN_HEIGHT / 2 + 20, COL_WHITE, 1.5f);
+            
+            drawTextCentered("DRUECKE 2", SCREEN_HEIGHT / 2 + 55, COL_YELLOW, 1.8f);
+            drawTextCentered("ZWEI-SPIELER", SCREEN_HEIGHT / 2 + 85, COL_WHITE, 1.5f);
+            
+        } else if(gameState == STATE_PLAYING) {
             renderLevel();
             renderPlayer();
             renderHUD();
@@ -182,7 +219,7 @@ int main(int argc, char **argv) {
                 
                 drawTextCentered("GAME OVER", SCREEN_HEIGHT / 2 - 25, COL_RED, 2.5f);
                 drawTextCentered("DRUECKE A ZUM", SCREEN_HEIGHT / 2 + 10, COL_WHITE, 1.5f);
-                drawTextCentered("NEUSTARTEN", SCREEN_HEIGHT / 2 + 35, COL_WHITE, 1.5f);
+                drawTextCentered("HAUPTMENUE", SCREEN_HEIGHT / 2 + 35, COL_WHITE, 1.5f);
             }
         }
         

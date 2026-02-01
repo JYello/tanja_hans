@@ -107,13 +107,21 @@ void renderLevel(void) {
 void renderPlayer(void) {
     PlayerPair* player = getPlayer();
     
-    // Tanja-Position berechnen
-    float tanjaX = player->position.x + player->tanja.offset.x;
-    float tanjaY = player->position.y + player->tanja.offset.y;
+    float tanjaX, tanjaY, hansX, hansY;
     
-    // Hans-Position berechnen
-    float hansX = player->position.x + player->hans.offset.x;
-    float hansY = player->position.y + player->hans.offset.y;
+    if(player->mode == MODE_SINGLE_PLAYER) {
+        // Single-Player: Offset-basiert
+        tanjaX = player->position.x + player->tanja.offset.x;
+        tanjaY = player->position.y + player->tanja.offset.y;
+        hansX = player->position.x + player->hans.offset.x;
+        hansY = player->position.y + player->hans.offset.y;
+    } else {
+        // Zwei-Spieler: Eigene Positionen
+        tanjaX = player->tanja.position.x;
+        tanjaY = player->tanja.position.y;
+        hansX = player->hans.position.x;
+        hansY = player->hans.position.y;
+    }
     
     // Händchen-Verbindung (Linie)
     // Blinkt bei Unverwundbarkeit

@@ -11,6 +11,7 @@
 #define GRAVITY             0.5f
 #define MAX_FALL_SPEED      10.0f
 #define HAND_DISTANCE       30.0f  // Abstand zwischen Tanja und Hans
+#define MAX_DISTANCE        80.0f  // Maximaler Abstand im Zwei-Spieler-Modus
 
 // Animations-Zustände
 typedef enum {
@@ -21,30 +22,34 @@ typedef enum {
 
 // Charakter (Tanja oder Hans)
 typedef struct {
-    Vector2 offset;      // Relativer Versatz zum Mittelpunkt
-    u32 color;           // Farbe (für Prototyp)
+    Vector2 position;    // Im Zwei-Spieler-Modus: eigene Position
+    Vector2 offset;      // Im Single-Player: Relativer Versatz zum Mittelpunkt
+    Vector2 velocity;    // Im Zwei-Spieler-Modus: eigene Velocity
+    u32 color;
     AnimState animState;
     float animTimer;
     int animFrame;
     bool facingRight;
+    bool grounded;       // Im Zwei-Spieler-Modus: eigener Ground-Status
 } Character;
 
 // Spieler-Paar
 typedef struct {
-    Vector2 position;    // Gemeinsame Mittelpunkt-Position
-    Vector2 velocity;
-    bool grounded;
+    Vector2 position;    // Gemeinsame Mittelpunkt-Position (Single-Player)
+    Vector2 velocity;    // Gemeinsame Velocity (Single-Player)
+    bool grounded;       // Gemeinsamer Ground-Status (Single-Player)
     int hearts;
     int suns;
     
     Character tanja;
     Character hans;
     
-    float invincibilityTimer;  // Für Unverwundbarkeit nach Treffer
+    float invincibilityTimer;
+    GameMode mode;       // Single oder Zwei-Spieler
 } PlayerPair;
 
 // Funktionen
-void initPlayer(void);
+void initPlayer(GameMode mode);
 void updatePlayer(float dt);
 PlayerPair* getPlayer(void);
 

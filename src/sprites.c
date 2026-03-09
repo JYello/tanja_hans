@@ -6,8 +6,20 @@
 extern const u8 sprites_png[];
 extern const u32 sprites_png_size;
 
+extern const u8 heart_png[];
+extern const u32 heart_png_size;
+
+extern const u8 sun_png[];
+extern const u32 sun_png_size;
+
+extern const u8 enemies_png[];
+extern const u32 enemies_png_size;
+
 SpriteSheet tanjaSprites;
 SpriteSheet hansSprites;
+GRRLIB_texImg* heartSprite = NULL;
+GRRLIB_texImg* sunSprite = NULL;
+GRRLIB_texImg* enemySprites = NULL;
 
 bool loadSprites(void) {
     // Lade PNG aus eingebetteten Daten
@@ -17,19 +29,10 @@ bool loadSprites(void) {
         return false;
     }
     
-    // Annahme: th_pixel3.png hat Tanja links, Hans rechts
-    // Wir teilen das Bild in der Mitte
-    int fullWidth = spriteSheet->w;
-    int fullHeight = spriteSheet->h;
-    
-    // Für Animationen: Wir nehmen an dass jede Figur mehrere Frames hat
-    // Format: [Idle] [Walk1] [Walk2] [Walk3] [Jump]
-    // Jeder Frame ist 64x64 Pixel
-    
     tanjaSprites.texture = spriteSheet;
-    tanjaSprites.frameWidth = 64;   // 64x64 pro Frame
+    tanjaSprites.frameWidth = 64;
     tanjaSprites.frameHeight = 64;
-    tanjaSprites.scale = 1.0f;      // Keine zusätzliche Skalierung (64px ist schon gut)
+    tanjaSprites.scale = 1.0f;
     
     hansSprites.texture = spriteSheet;
     hansSprites.frameWidth = 64;
@@ -37,6 +40,11 @@ bool loadSprites(void) {
     hansSprites.scale = 1.0f;
     
     GRRLIB_SetHandle(spriteSheet, 0, 0);
+    
+    // Lade Sammelobjekte
+    heartSprite = GRRLIB_LoadTexture(heart_png);
+    sunSprite = GRRLIB_LoadTexture(sun_png);
+    enemySprites = GRRLIB_LoadTexture(enemies_png);
     
     return true;
 }
@@ -46,6 +54,21 @@ void cleanupSprites(void) {
         GRRLIB_FreeTexture(tanjaSprites.texture);
         tanjaSprites.texture = NULL;
         hansSprites.texture = NULL;  // Beide nutzen dieselbe Texture
+    }
+    
+    if(heartSprite) {
+        GRRLIB_FreeTexture(heartSprite);
+        heartSprite = NULL;
+    }
+    
+    if(sunSprite) {
+        GRRLIB_FreeTexture(sunSprite);
+        sunSprite = NULL;
+    }
+    
+    if(enemySprites) {
+        GRRLIB_FreeTexture(enemySprites);
+        enemySprites = NULL;
     }
 }
 
@@ -109,5 +132,52 @@ void drawCharacterSprite(float x, float y, Character* character, float scale) {
         drawScale,  // Normale Skalierung
         drawScale,  // Keine negative Skalierung!
         0xFFFFFFFF  // Weiß
+    );
+}
+
+void drawHeart(float x, float y, float scale) {
+    if(!heartSprite) return;
+    
+    GRRLIB_DrawImg(
+        x - (16 * scale) / 2,
+        y - (16 * scale) / 2,
+        heartSprite,
+        0,  // Rotation
+        scale * 2.0f,  // 16px → 32px
+        scale * 2.0f,
+        0xFFFFFFFF
+    );
+}
+
+void drawSun(float x, float y, float scale) {
+    if(!sunSprite) return;
+    
+    GRRLIB_DrawImg(
+        x - (16 * scale) / 2,
+        y - (16 * scale) / 2,
+        sunSprite,
+        0,
+        scale * 2.0f,  // 16px → 32px
+        scale * 2.0f,
+        0xFFFFFFFF
+    );
+}
+
+void drawEnemy(float x, float y, int enemyType, float scale) {
+    if(!enemySprites || enemyType < 0 || enemyType > 2) return;
+    
+    // enemies.png: 3 Monster nebeneinander, je 20px breit
+    GRRLIB_DrawPart(
+        x - (20 * scale) / 2,
+        y - (20 * scale) / 2,
+        enemyType * 20,  // X-Offset im Sprite-Sheet
+        0,
+        20,  // Breite
+        20,  // Höhe
+        enemySprites,
+        0,
+        scale * 2.0f,  // 20px → 40px
+        scale * 2.0f,
+        0xFFFFFFFF
     );
 }

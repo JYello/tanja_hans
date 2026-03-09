@@ -114,13 +114,7 @@ static void updateCharacter(Character* c, InputState* input, float dt) {
     c->position.x += c->velocity.x;
     c->position.y += c->velocity.y;
     
-    // Bildschirmgrenzen
-    if(c->position.x < PLAYER_WIDTH / 2) {
-        c->position.x = PLAYER_WIDTH / 2;
-    }
-    if(c->position.x > SCREEN_WIDTH - PLAYER_WIDTH / 2) {
-        c->position.x = SCREEN_WIDTH - PLAYER_WIDTH / 2;
-    }
+    // KEINE Bildschirmgrenzen hier! Die werden nach der elastischen Verbindung geprüft!
 }
 
 // Helper: Kollision für einen Charakter
@@ -321,16 +315,48 @@ void updatePlayer(float dt) {
         
         if(distance > MAX_DISTANCE) {
             // Zu weit auseinander - ziehen zusammen
-            float pullStrength = (distance - MAX_DISTANCE) * 0.3f;
+            float pullStrength = (distance - MAX_DISTANCE) * 0.5f;
             float angle = atan2f(dy, dx);
             
-            // Tanja wird zu Hans gezogen
-            player.tanja.position.x += cosf(angle) * pullStrength;
-            player.tanja.position.y += sinf(angle) * pullStrength;
+            // Beide werden gleichmäßig zueinander gezogen
+            float tanjaMove = pullStrength * 0.5f;
+            float hansMove = pullStrength * 0.5f;
             
-            // Hans wird zu Tanja gezogen
-            player.hans.position.x -= cosf(angle) * pullStrength;
-            player.hans.position.y -= sinf(angle) * pullStrength;
+            player.tanja.position.x += cosf(angle) * tanjaMove;
+            player.tanja.position.y += sinf(angle) * tanjaMove;
+            
+            player.hans.position.x -= cosf(angle) * hansMove;
+            player.hans.position.y -= sinf(angle) * hansMove;
+        }
+        
+        // Bildschirmgrenzen für beide (NACH elastischer Verbindung)
+        // Tanja
+        if(player.tanja.position.x < PLAYER_WIDTH / 2) {
+            player.tanja.position.x = PLAYER_WIDTH / 2;
+            // Wenn Tanja am Rand ist und Hans zu weit weg, stoppe Hans auch
+            if(distance > MAX_DISTANCE * 0.8f) {
+                player.hans.position.x = player.tanja.position.x + MAX_DISTANCE * 0.8f;
+            }
+        }
+        if(player.tanja.position.x > SCREEN_WIDTH - PLAYER_WIDTH / 2) {
+            player.tanja.position.x = SCREEN_WIDTH - PLAYER_WIDTH / 2;
+            if(distance > MAX_DISTANCE * 0.8f) {
+                player.hans.position.x = player.tanja.position.x - MAX_DISTANCE * 0.8f;
+            }
+        }
+        
+        // Hans
+        if(player.hans.position.x < PLAYER_WIDTH / 2) {
+            player.hans.position.x = PLAYER_WIDTH / 2;
+            if(distance > MAX_DISTANCE * 0.8f) {
+                player.tanja.position.x = player.hans.position.x + MAX_DISTANCE * 0.8f;
+            }
+        }
+        if(player.hans.position.x > SCREEN_WIDTH - PLAYER_WIDTH / 2) {
+            player.hans.position.x = SCREEN_WIDTH - PLAYER_WIDTH / 2;
+            if(distance > MAX_DISTANCE * 0.8f) {
+                player.tanja.position.x = player.hans.position.x - MAX_DISTANCE * 0.8f;
+            }
         }
         
         // Mittelpunkt für Sammelobjekt-Kollision

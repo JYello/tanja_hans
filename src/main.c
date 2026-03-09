@@ -16,6 +16,7 @@
 #include "enemy.h"
 #include "audio.h"
 #include "font.h"
+#include "sprites.h"
 
 // Globale Variablen
 static bool running = true;
@@ -31,6 +32,11 @@ int main(int argc, char **argv) {
     
     // Audio initialisieren
     initAudio();
+    
+    // Sprites laden
+    if(!loadSprites()) {
+        // Sprites konnten nicht geladen werden - nutze Fallback (Rechtecke)
+    }
     
     // Level laden
     initLevel();
@@ -228,6 +234,7 @@ int main(int argc, char **argv) {
     
     // Aufräumen
     cleanupLevel();
+    cleanupSprites();
     cleanupAudio();
     GRRLIB_Exit();
     

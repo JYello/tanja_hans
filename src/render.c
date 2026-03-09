@@ -3,6 +3,7 @@
 #include "level.h"
 #include "player.h"
 #include "enemy.h"
+#include "sprites.h"
 #include <grrlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -40,32 +41,42 @@ void renderLevel(void) {
     for(int i = 0; i < collectibleCount; i++) {
         if(!collectibles[i].collected) {
             if(collectibles[i].isHeart) {
-                // Herz (rotes Rechteck mit weißem Rand)
-                GRRLIB_Rectangle(
-                    collectibles[i].x - 8,
-                    collectibles[i].y - 8,
-                    16,
-                    16,
-                    COL_RED,
-                    true
-                );
-                GRRLIB_Rectangle(
-                    collectibles[i].x - 8,
-                    collectibles[i].y - 8,
-                    16,
-                    16,
-                    COL_WHITE,
-                    false
-                );
+                // Herz-Sprite (falls geladen)
+                if(heartSprite) {
+                    drawHeart(collectibles[i].x, collectibles[i].y, 1.0f);
+                } else {
+                    // Fallback: Rotes Rechteck
+                    GRRLIB_Rectangle(
+                        collectibles[i].x - 8,
+                        collectibles[i].y - 8,
+                        16,
+                        16,
+                        COL_RED,
+                        true
+                    );
+                    GRRLIB_Rectangle(
+                        collectibles[i].x - 8,
+                        collectibles[i].y - 8,
+                        16,
+                        16,
+                        COL_WHITE,
+                        false
+                    );
+                }
             } else {
-                // Sonne (gelber Kreis)
-                GRRLIB_Circle(
-                    collectibles[i].x,
-                    collectibles[i].y,
-                    8,
-                    COL_YELLOW,
-                    true
-                );
+                // Sonnen-Sprite (falls geladen)
+                if(sunSprite) {
+                    drawSun(collectibles[i].x, collectibles[i].y, 1.0f);
+                } else {
+                    // Fallback: Gelber Kreis
+                    GRRLIB_Circle(
+                        collectibles[i].x,
+                        collectibles[i].y,
+                        8,
+                        COL_YELLOW,
+                        true
+                    );
+                }
             }
         }
     }
@@ -76,30 +87,41 @@ void renderLevel(void) {
     
     for(int i = 0; i < enemyCount; i++) {
         if(enemies[i].active) {
-            // Gegner als Kreis mit Augen
-            GRRLIB_Circle(
-                enemies[i].position.x,
-                enemies[i].position.y,
-                10,
-                enemies[i].color,
-                true
-            );
-            
-            // Augen (kleine schwarze Punkte)
-            GRRLIB_Circle(
-                enemies[i].position.x - 4,
-                enemies[i].position.y - 2,
-                2,
-                COL_BLACK,
-                true
-            );
-            GRRLIB_Circle(
-                enemies[i].position.x + 4,
-                enemies[i].position.y - 2,
-                2,
-                COL_BLACK,
-                true
-            );
+            // Monster-Sprite (falls geladen)
+            if(enemySprites) {
+                // enemyType basierend auf Type
+                int spriteType = 0;
+                if(enemies[i].type == ENEMY_PATROL) spriteType = 0;
+                else if(enemies[i].type == ENEMY_HOVER) spriteType = 1;
+                else if(enemies[i].type == ENEMY_CIRCLE) spriteType = 2;
+                
+                drawEnemy(enemies[i].position.x, enemies[i].position.y, spriteType, 1.0f);
+            } else {
+                // Fallback: Kreis mit Augen
+                GRRLIB_Circle(
+                    enemies[i].position.x,
+                    enemies[i].position.y,
+                    10,
+                    enemies[i].color,
+                    true
+                );
+                
+                // Augen (kleine schwarze Punkte)
+                GRRLIB_Circle(
+                    enemies[i].position.x - 4,
+                    enemies[i].position.y - 2,
+                    2,
+                    COL_BLACK,
+                    true
+                );
+                GRRLIB_Circle(
+                    enemies[i].position.x + 4,
+                    enemies[i].position.y - 2,
+                    2,
+                    COL_BLACK,
+                    true
+                );
+            }
         }
     }
 }
@@ -148,92 +170,102 @@ void renderPlayer(void) {
         );
     }
     
-    // Tanja zeichnen mit Animation
-    float tanjaWidth = PLAYER_WIDTH;
-    float tanjaHeight = PLAYER_HEIGHT;
-    
-    // Walk-Animation: Größe pulsiert leicht
-    if(player->tanja.animState == ANIM_WALK) {
-        float pulse = (player->tanja.animFrame % 2 == 0) ? 1.0f : 0.9f;
-        tanjaHeight *= pulse;
-    }
-    // Jump-Animation: gestreckt
-    else if(player->tanja.animState == ANIM_JUMP) {
-        tanjaHeight *= 1.1f;
-        tanjaWidth *= 0.9f;
-    }
-    
-    // Blinken bei Unverwundbarkeit
-    if(player->invincibilityTimer > 0.0f && ((int)(player->invincibilityTimer * 10) % 2 == 1)) {
-        // Nicht zeichnen (Blink-Effekt)
+    // Sprites zeichnen (wenn geladen)
+    if(tanjaSprites.texture) {
+        // Blinken bei Unverwundbarkeit
+        if(player->invincibilityTimer <= 0.0f || ((int)(player->invincibilityTimer * 10) % 2 == 0)) {
+            drawCharacterSprite(tanjaX, tanjaY, &player->tanja, 1.0f);
+            drawCharacterSprite(hansX, hansY, &player->hans, 1.0f);
+        }
     } else {
-        GRRLIB_Rectangle(
-            tanjaX - tanjaWidth / 2,
-            tanjaY - tanjaHeight / 2,
-            tanjaWidth,
-            tanjaHeight,
-            player->tanja.color,
-            true
-        );
+        // Fallback: Rechtecke (wie bisher)
+        // Tanja zeichnen mit Animation
+        float tanjaWidth = PLAYER_WIDTH;
+        float tanjaHeight = PLAYER_HEIGHT;
         
-        // Umrandung
-        GRRLIB_Rectangle(
-            tanjaX - tanjaWidth / 2,
-            tanjaY - tanjaHeight / 2,
-            tanjaWidth,
-            tanjaHeight,
-            COL_WHITE,
-            false
-        );
+        // Walk-Animation: Größe pulsiert leicht
+        if(player->tanja.animState == ANIM_WALK) {
+            float pulse = (player->tanja.animFrame % 2 == 0) ? 1.0f : 0.9f;
+            tanjaHeight *= pulse;
+        }
+        // Jump-Animation: gestreckt
+        else if(player->tanja.animState == ANIM_JUMP) {
+            tanjaHeight *= 1.1f;
+            tanjaWidth *= 0.9f;
+        }
         
-        // Gesicht (Augen)
-        float eyeOffset = player->tanja.facingRight ? 4.0f : -4.0f;
-        GRRLIB_Circle(tanjaX + eyeOffset - 3, tanjaY - 5, 2, COL_BLACK, true);
-        GRRLIB_Circle(tanjaX + eyeOffset + 3, tanjaY - 5, 2, COL_BLACK, true);
-    }
-    
-    // Hans zeichnen mit Animation
-    float hansWidth = PLAYER_WIDTH;
-    float hansHeight = PLAYER_HEIGHT;
-    
-    // Walk-Animation
-    if(player->hans.animState == ANIM_WALK) {
-        float pulse = (player->hans.animFrame % 2 == 0) ? 1.0f : 0.9f;
-        hansHeight *= pulse;
-    }
-    // Jump-Animation
-    else if(player->hans.animState == ANIM_JUMP) {
-        hansHeight *= 1.1f;
-        hansWidth *= 0.9f;
-    }
-    
-    // Blinken bei Unverwundbarkeit
-    if(player->invincibilityTimer > 0.0f && ((int)(player->invincibilityTimer * 10) % 2 == 1)) {
-        // Nicht zeichnen
-    } else {
-        GRRLIB_Rectangle(
-            hansX - hansWidth / 2,
-            hansY - hansHeight / 2,
-            hansWidth,
-            hansHeight,
-            player->hans.color,
-            true
-        );
+        // Blinken bei Unverwundbarkeit
+        if(player->invincibilityTimer > 0.0f && ((int)(player->invincibilityTimer * 10) % 2 == 1)) {
+            // Nicht zeichnen (Blink-Effekt)
+        } else {
+            GRRLIB_Rectangle(
+                tanjaX - tanjaWidth / 2,
+                tanjaY - tanjaHeight / 2,
+                tanjaWidth,
+                tanjaHeight,
+                player->tanja.color,
+                true
+            );
+            
+            // Umrandung
+            GRRLIB_Rectangle(
+                tanjaX - tanjaWidth / 2,
+                tanjaY - tanjaHeight / 2,
+                tanjaWidth,
+                tanjaHeight,
+                COL_WHITE,
+                false
+            );
+            
+            // Gesicht (Augen)
+            float eyeOffset = player->tanja.facingRight ? 4.0f : -4.0f;
+            GRRLIB_Circle(tanjaX + eyeOffset - 3, tanjaY - 5, 2, COL_BLACK, true);
+            GRRLIB_Circle(tanjaX + eyeOffset + 3, tanjaY - 5, 2, COL_BLACK, true);
+        }
         
-        // Umrandung
-        GRRLIB_Rectangle(
-            hansX - hansWidth / 2,
-            hansY - hansHeight / 2,
-            hansWidth,
-            hansHeight,
-            COL_WHITE,
-            false
-        );
+        // Hans zeichnen mit Animation
+        float hansWidth = PLAYER_WIDTH;
+        float hansHeight = PLAYER_HEIGHT;
         
-        // Gesicht (Augen)
-        float eyeOffset = player->hans.facingRight ? 4.0f : -4.0f;
-        GRRLIB_Circle(hansX + eyeOffset - 3, hansY - 5, 2, COL_BLACK, true);
-        GRRLIB_Circle(hansX + eyeOffset + 3, hansY - 5, 2, COL_BLACK, true);
+        // Walk-Animation
+        if(player->hans.animState == ANIM_WALK) {
+            float pulse = (player->hans.animFrame % 2 == 0) ? 1.0f : 0.9f;
+            hansHeight *= pulse;
+        }
+        // Jump-Animation
+        else if(player->hans.animState == ANIM_JUMP) {
+            hansHeight *= 1.1f;
+            hansWidth *= 0.9f;
+        }
+        
+        // Blinken bei Unverwundbarkeit
+        if(player->invincibilityTimer > 0.0f && ((int)(player->invincibilityTimer * 10) % 2 == 1)) {
+            // Nicht zeichnen
+        } else {
+            GRRLIB_Rectangle(
+                hansX - hansWidth / 2,
+                hansY - hansHeight / 2,
+                hansWidth,
+                hansHeight,
+                player->hans.color,
+                true
+            );
+            
+            // Umrandung
+            GRRLIB_Rectangle(
+                hansX - hansWidth / 2,
+                hansY - hansHeight / 2,
+                hansWidth,
+                hansHeight,
+                COL_WHITE,
+                false
+            );
+            
+            // Gesicht (Augen)
+            float eyeOffset = player->hans.facingRight ? 4.0f : -4.0f;
+            GRRLIB_Circle(hansX + eyeOffset - 3, hansY - 5, 2, COL_BLACK, true);
+            GRRLIB_Circle(hansX + eyeOffset + 3, hansY - 5, 2, COL_BLACK, true);
+        }
     }
 }
 
@@ -242,32 +274,44 @@ void renderHUD(void) {
     
     // Herzen (oben links)
     for(int i = 0; i < player->hearts; i++) {
-        GRRLIB_Rectangle(
-            10 + (i * 25),
-            10,
-            20,
-            20,
-            COL_RED,
-            true
-        );
-        GRRLIB_Rectangle(
-            10 + (i * 25),
-            10,
-            20,
-            20,
-            COL_WHITE,
-            false
-        );
+        if(heartSprite) {
+            // Nutze Herz-Sprite
+            drawHeart(25 + (i * 25), 25, 0.8f);
+        } else {
+            // Fallback: Rotes Rechteck
+            GRRLIB_Rectangle(
+                10 + (i * 25),
+                10,
+                20,
+                20,
+                COL_RED,
+                true
+            );
+            GRRLIB_Rectangle(
+                10 + (i * 25),
+                10,
+                20,
+                20,
+                COL_WHITE,
+                false
+            );
+        }
     }
     
     // Sonnen-Zähler (oben rechts) - visuell
     for(int i = 0; i < player->suns; i++) {
-        GRRLIB_Circle(
-            SCREEN_WIDTH - 30 - (i * 20),
-            25,
-            8,
-            COL_YELLOW,
-            true
-        );
+        if(sunSprite) {
+            // Nutze Sonnen-Sprite
+            drawSun(SCREEN_WIDTH - 25 - (i * 25), 25, 0.8f);
+        } else {
+            // Fallback: Gelber Kreis
+            GRRLIB_Circle(
+                SCREEN_WIDTH - 30 - (i * 20),
+                25,
+                8,
+                COL_YELLOW,
+                true
+            );
+        }
     }
 }
